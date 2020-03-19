@@ -8,10 +8,14 @@ local env = nil
 
 local u = pmutils
 
+local sourcename = minetest.settings:get("playermanager_db_sourcename")
+local username = minetest.settings:get("playermanager_db_username")
+local password = minetest.settings:get("playermanager_db_password")
+
 local function prep_db()
    env = assert (driver.postgres())
    -- connect to data source
-   db = assert (env:connect("citadella", "mt"))
+   db = assert (env:connect(sourcename, username, password))
 
    -- group table, named ctgroup because heck quoted table names
    local res = assert(u.prepare(db, [[
