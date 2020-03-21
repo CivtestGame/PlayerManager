@@ -29,7 +29,7 @@ end
 
 --[[ player management proper ]]--
 
-local function generate_id()
+function pm.generate_id()
    return pm.random_string(16)
 end
 
@@ -39,8 +39,7 @@ local QUERY_REGISTER_PLAYER = [[
   ON CONFLICT DO NOTHING
 ]]
 
-function pm.register_player(player_name)
-   local player_id = generate_id()
+function pm.register_player(player_name, player_id)
    return assert(u.prepare(db, QUERY_REGISTER_PLAYER, player_id, player_name))
 end
 
@@ -243,5 +242,49 @@ local QUERY_DELETE_PLAYERS_FOR_GROUP = [[
 function pm.delete_players_for_group(ctgroup_id)
    return assert(u.prepare(db, QUERY_DELETE_PLAYERS_FOR_GROUP, ctgroup_id))
 end
+
+local QUERY_REGISTER_IPADDRESS = [[
+  INSERT INTO ipaddress (value)
+  VALUES (?)
+  ON CONFLICT DO NOTHING
+]]
+
+function pm.register_ipaddress(ip_address)
+   return assert(u.prepare(db, QUERY_REGISTER_IPADDRESS, ip_address))
+end
+
+local QUERY_REGISTER_PLAYER_IPADDRESS = [[
+  INSERT INTO player_ipaddress (player_id, ip)
+  VALUES (?, ?)
+  ON CONFLICT DO NOTHING
+]]
+
+function pm.register_player_ipaddress(player_id, ip_address)
+   return assert(u.prepare(db, QUERY_REGISTER_PLAYER_IPADDRESS,
+                           player_id, ip_address))
+end
+
+local QUERY_FIND_OTHER_PLAYERS_WITH_SAME_IP = [[
+  SELECT * FROM player_ipaddress
+    INNER JOIN player
+    ON player.id = player_ipaddress.player_id
+  WHERE player_ipaddress.ip = ?
+    AND player_ipaddress.player_id != ?
+]]
+
+function pm.find_other_players_with_same_ip(player_id, ip)
+   local cur = u.prepare(
+      db, QUERY_FIND_OTHER_PLAYERS_WITH_SAME_IP, ip, player_id
+   )
+   local players
+   local row = cur:fetch({}, "a")
+   while row do
+      players = players or {}
+      players[#players + 1] = { player_name = row.name }
+      row = cur:fetch(row, "a")
+   end
+   return players
+end
+
 
 --[[ End of DB interface ]]--

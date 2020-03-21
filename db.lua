@@ -59,6 +59,21 @@ local function prep_db()
          permission varchar(32) NOT NULL,
          PRIMARY KEY (player_id, ctgroup_id)
      )]]))
+
+   -- maps players to ip addresses
+   res = assert(u.prepare(db, [[
+     CREATE TABLE IF NOT EXISTS ipaddress (
+         value varchar(39),
+         PRIMARY KEY (value)
+     )]]))
+
+   -- maps players to ip addresses
+   res = assert(u.prepare(db, [[
+     CREATE TABLE IF NOT EXISTS player_ipaddress (
+         player_id varchar(16) REFERENCES player(id),
+         ip varchar(39) REFERENCES ipaddress(value),
+         PRIMARY KEY (player_id, ip)
+     )]]))
 end
 
 
