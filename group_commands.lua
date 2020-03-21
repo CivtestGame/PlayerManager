@@ -210,6 +210,96 @@ local function group_add_cmd(sender, group_name, ...)
    return true
 end
 
+local player_invites = {}
+
+local function invite_player_to_group(target, ctgroup)
+   local target_name = target.name
+   local ctgroup_name = ctgroup.name
+   local ctgroup_id = ctgroup.id
+   player_invites[target_name] = player_invites[target_name] or {}
+   player_invites[target_name][ctgroup_id] = ctgroup
+   minetest.chat_send_player(
+      target_name, "You have been invited to group '"..ctgroup_name.."'. "
+         .. "Use '/group accept "..ctgroup_name.."' to accept the invite."
+   )
+end
+
+local function group_invite_cmd(sender, group_name, ...)
+   local ctgroup, err = matches_group_and_rank(
+      sender, group_name, { admin = true, mod = true }
+   )
+   if not ctgroup then
+      return false, err
+   end
+
+   -- duplicated code from '/group add'
+   local targets = { ... }
+   for _, target in ipairs(targets) do
+      local target_player = pm.get_player_by_name(target)
+      if not target_player then
+         minetest.chat_send_player(
+            sender.name,
+            "Player '"..target.."' not found."
+         )
+         goto continue
+      end
+
+      local target_player_group_info
+         = pm.get_player_group(target_player.id, ctgroup.id)
+      if target_player_group_info then
+         minetest.chat_send_player(
+            sender.name,
+            "Player '"..target_player.name ..
+               "' is already on the group '"..ctgroup.name.."'."
+         )
+         goto continue
+      end
+
+      local player_obj = minetest.get_player_by_name(target)
+      if not player_obj then
+         minetest.chat_send_player(
+            sender.name,
+            "Player '" .. target_player.name ..
+               "' must be online to receive the invite."
+         )
+         goto continue
+      end
+
+      invite_player_to_group(target_player, ctgroup)
+
+      minetest.chat_send_player(
+         sender.name,
+         "Player '"..target_player.name.."' was invited to group '" ..
+            ctgroup.name .. "'."
+      )
+      ::continue::
+   end
+   return true
+end
+
+local function group_accept_cmd(sender, group_name)
+   local ctgroup = pm.get_group_by_name(group_name)
+   if not ctgroup then
+      return nil, "Group '"..group_name.."' not found."
+   end
+
+   local sender_name = sender.name
+   local ctgroup_id = ctgroup.id
+
+   if player_invites[sender_name]
+      and player_invites[sender_name][ctgroup_id]
+   then
+      pm.register_player_group_permission(sender.id, ctgroup_id, "member")
+      player_invites[sender_name][ctgroup_id] = nil
+      minetest.chat_send_player(
+         sender_name, "You joined the group '"..group_name.."'."
+      )
+      return true
+   else
+      return false, "You have not been invited to group '"..group_name.."."
+   end
+end
+
 local function group_remove_cmd(sender, group_name, ...)
    local ctgroup, err = matches_group_and_rank(
       sender, group_name, { admin = true }
@@ -376,6 +466,10 @@ local group_cmd_lookup_table = {
       fn = group_invite_cmd,
       accept_many_after = 2
    },
+   accept = {
+      params = { "<group>" },
+      fn = group_accept_cmd,
+   },
    remove = {
       params = { "<group>", "<players...>"},
       fn = group_remove_cmd,
@@ -416,8 +510,8 @@ local function pm_parse_params(pname, raw_params, lookup_table)
          accept_many_after = 0
       end
 
-      if #params ~= #cmd_spec.params or
-         (accept_many and #params < accept_many_after)
+      if (accept_many and #params < accept_many_after)
+         or (not accept_many and #params ~= #cmd_spec.params)
       then
          return false, "Invalid arguments, usage: /group " .. action .. " "
             .. table.concat(cmd_spec.params, " ")
