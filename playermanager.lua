@@ -45,7 +45,7 @@ function pm.register_player(player_name)
 end
 
 local QUERY_GET_PLAYER_BY_NAME = [[
-  SELECT * FROM player WHERE player.name = ?
+  SELECT * FROM player WHERE LOWER(player.name) = LOWER(?)
 ]]
 
 function pm.get_player_by_name(player_name)
@@ -86,7 +86,7 @@ function pm.register_group(ctgroup_name)
 end
 
 local QUERY_GET_GROUP_BY_NAME = [[
-  SELECT * FROM ctgroup WHERE ctgroup.name = ?
+  SELECT * FROM ctgroup WHERE LOWER(ctgroup.name) = LOWER(?)
 ]]
 
 function pm.get_group_by_name(ctgroup_name)
