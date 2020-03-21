@@ -308,6 +308,12 @@ local function group_remove_cmd(sender, group_name, ...)
       return false, err
    end
 
+   local players_for_group = pm.get_players_for_group(ctgroup.id)
+   if #players_for_group == 1 then
+      return false, "You are the only player on '"..ctgroup.name.."'. "
+         .. "Please use '/group delete'."
+   end
+
    local targets = { ... }
    for _, target in ipairs(targets) do
       local target_player = pm.get_player_by_name(target)
@@ -339,6 +345,31 @@ local function group_remove_cmd(sender, group_name, ...)
       )
       ::continue::
    end
+   return true
+end
+
+local function group_leave_cmd(sender, group_name)
+   local ctgroup, err = matches_group_and_rank(sender, group_name)
+   if not ctgroup then
+      return false, err
+   end
+
+   local player_group_info = pm.get_player_group(sender.id, ctgroup.id)
+   if not player_group_info then
+      return false, "You are not on the group '"..ctgroup.name.."'."
+   end
+
+   local players_for_group = pm.get_players_for_group(ctgroup.id)
+   if #players_for_group == 1 then
+      return false, "You are the only player on '"..ctgroup.name.."'. "
+         .. "Please use '/group delete' instead."
+   end
+
+   pm.delete_player_group(sender.id, ctgroup.id)
+
+   minetest.chat_send_player(
+      sender.name, "You left the group '"..ctgroup.name.."'."
+   )
    return true
 end
 
@@ -471,9 +502,13 @@ local group_cmd_lookup_table = {
       fn = group_accept_cmd,
    },
    remove = {
-      params = { "<group>", "<players...>"},
+      params = { "<group>", "<players...>" },
       fn = group_remove_cmd,
       accept_many_after = 2
+   },
+   leave = {
+      params = { "<group>" },
+      fn = group_leave_cmd
    },
    rank = {
       params = { "<group>", "<player>", "(member | mod | admin)" },
