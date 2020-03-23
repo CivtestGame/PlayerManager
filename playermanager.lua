@@ -80,7 +80,7 @@ local QUERY_REGISTER_GROUP = [[
 ]]
 
 function pm.register_group(ctgroup_name)
-   local ctgroup_id = generate_id()
+   local ctgroup_id = pm.generate_id()
    return assert(u.prepare(db, QUERY_REGISTER_GROUP, ctgroup_id, ctgroup_name))
 end
 
