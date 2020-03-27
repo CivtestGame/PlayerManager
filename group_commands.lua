@@ -490,7 +490,8 @@ local group_cmd_lookup_table = {
    add = {
       params = { "<group>", "<players...>" },
       fn = group_add_cmd,
-      accept_many_after = 2
+      accept_many_after = 2,
+      invisible = true
    },
    invite = {
       params = { "<group>", "<players...>" },
@@ -518,14 +519,26 @@ local group_cmd_lookup_table = {
 
 local u = pmutils
 
-local function pm_parse_params(pname, raw_params, lookup_table)
+local function get_actions(lookup_table)
+   local tab = table.copy(lookup_table)
+   local actions = {}
+   for action,def in pairs(tab) do
+      if not def.invisible then
+         actions[#actions + 1] = action
+      end
+   end
+   return actions
+end
+
+local function pm_parse_params(pname, raw_params, lookup_table,
+                               hidden_lookup_table)
    local params = {}
    for chunk in string.gmatch(raw_params, "[^%s]+") do
       table.insert(params, chunk)
    end
 
    if #params == 0 then
-      local actions = u.table_keyvals(lookup_table)
+      local actions = get_actions(lookup_table)
       return false, "Usage: /group <action> ...\n" ..
          "Valid actions: " .. table.concat(actions, ", ")
    end
