@@ -199,7 +199,9 @@ function pm.get_players_for_group(ctgroup_id)
          {
             name = row.name,
             id = row.id,
-            permission = row.permission
+            permission = row.permission,
+            shared_ip = row.shared_ip,
+            dynamic_ip = row.dynamic_ip,
          }
       )
       row = cur:fetch(row, "a")
@@ -264,6 +266,43 @@ function pm.register_player_ipaddress(player_id, ip_address)
                            player_id, ip_address))
 end
 
+local QUERY_GET_PLAYER_IPS = [[
+  SELECT * FROM player_ipaddress
+  WHERE player_ipaddress.player_id = ?
+]]
+
+function pm.get_player_ips(player_id)
+   local cur = u.prepare(
+      db, QUERY_GET_PLAYER_IPS, player_id
+   )
+   if not cur then return {} end
+
+   local ips
+   local row = cur:fetch({}, "a")
+   while row do
+      ips = ips or {}
+      ips[#ips + 1] = row.ip
+      row = cur:fetch(row, "a")
+   end
+   return ips
+end
+
+local QUERY_MATCH_PLAYER_AND_IP = [[
+  SELECT * FROM player_ipaddress
+  WHERE player_ipaddress.player_id = ?
+    AND player_ipaddress.ip = ?
+]]
+
+function pm.match_player_and_ip(player_id, ip)
+   local cur = u.prepare(
+      db, QUERY_MATCH_PLAYER_AND_IP, player_id, ip
+   )
+   if cur then
+      local row = cur:fetch({}, "a")
+      return row
+   end
+end
+
 local QUERY_FIND_OTHER_PLAYERS_WITH_SAME_IP = [[
   SELECT * FROM player_ipaddress
     INNER JOIN player
@@ -276,11 +315,19 @@ function pm.find_other_players_with_same_ip(player_id, ip)
    local cur = u.prepare(
       db, QUERY_FIND_OTHER_PLAYERS_WITH_SAME_IP, ip, player_id
    )
+   if not cur then
+      return {}
+   end
+
    local players
    local row = cur:fetch({}, "a")
    while row do
       players = players or {}
-      players[#players + 1] = { player_name = row.name }
+      players[#players + 1] = {
+         player_name = row.name,
+         shared_ip = row.shared_ip,
+         dynamic_ip = row.dynamic_ip
+      }
       row = cur:fetch(row, "a")
    end
    return players

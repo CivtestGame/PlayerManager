@@ -44,8 +44,10 @@ local function prep_db()
    res = assert(u.prepare(db,  [[
      CREATE TABLE IF NOT EXISTS player (
          id VARCHAR(16) NOT NULL,
-         name VARCHAR(16) NOT NULL,
+         name VARCHAR(32) NOT NULL,
          join_date TIMESTAMP NOT NULL,
+         dynamic_ip BOOLEAN NOT NULL DEFAULT FALSE,
+         shared_ip VARCHAR(39) REFERENCES ipaddress(value) DEFAULT NULL,
          PRIMARY KEY (id),
          UNIQUE (name)
      )]]))
@@ -72,7 +74,7 @@ local function prep_db()
      CREATE TABLE IF NOT EXISTS player_ipaddress (
          player_id varchar(16) REFERENCES player(id),
          ip varchar(39) REFERENCES ipaddress(value),
-         PRIMARY KEY (player_id, ip)
+         PRIMARY KEY (player_id)
      )]]))
 end
 
