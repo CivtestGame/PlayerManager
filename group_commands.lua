@@ -212,6 +212,8 @@ end
 
 local player_invites = {}
 
+local C = minetest.colorize
+
 local function invite_player_to_group(target, ctgroup)
    local target_name = target.name
    local ctgroup_name = ctgroup.name
@@ -219,8 +221,9 @@ local function invite_player_to_group(target, ctgroup)
    player_invites[target_name] = player_invites[target_name] or {}
    player_invites[target_name][ctgroup_id] = ctgroup
    minetest.chat_send_player(
-      target_name, "You have been invited to group '"..ctgroup_name.."'. "
-         .. "Use '/group accept "..ctgroup_name.."' to accept the invite."
+      target_name,
+      C("#0f0", "You have been invited to group '"..ctgroup_name
+           .."'. Use '/group accept "..ctgroup_name.."' to accept the invite.")
    )
 end
 
