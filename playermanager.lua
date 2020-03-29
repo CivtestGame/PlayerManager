@@ -333,5 +333,21 @@ function pm.find_other_players_with_same_ip(player_id, ip)
    return players
 end
 
+local QUERY_SET_PLAYER_SHARED_IP = [[
+  UPDATE player SET shared_ip = ? WHERE LOWER(name) = LOWER(?)
+]]
+
+function pm.set_player_shared_ip(player, ip_address)
+   return assert(u.prepare(db, QUERY_SET_PLAYER_SHARED_IP, ip_address, player))
+end
+
+
+local QUERY_SET_PLAYER_DYNAMIC_IP = [[
+  UPDATE player SET dynamic_ip = ? WHERE LOWER(name) = LOWER(?)
+]]
+
+function pm.set_player_dynamic_ip(player, ip_address)
+   return assert(u.prepare(db, QUERY_SET_PLAYER_DYNAMIC_IP, ip_address, player))
+end
 
 --[[ End of DB interface ]]--

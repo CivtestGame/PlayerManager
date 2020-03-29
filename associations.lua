@@ -91,3 +91,70 @@ minetest.register_on_prejoinplayer(function(name, ip)
             .. "contact a Civtest administrator on Reddit or Discord."
       end
 end)
+
+minetest.register_chatcommand(
+   "assoc_shared",
+   {
+      params = "<player> <ip>",
+      description = "Assign a player to a shared IP.",
+      func = function(name, param)
+         local split = param:split(" ")
+         if not next(split) or not split[1] then
+            return false, "No target specified."
+         end
+         local target = split[1]
+         if not split[2] then
+            return false, "No IP specified."
+         end
+         local ip = split[2]
+
+         local player_record = pm.get_player_by_name(target)
+         if player_record then
+            pm.set_player_shared_ip(target, ip)
+            minetest.chat_send_player(
+               name, "Shared IP updated for '"..target.."'."
+            )
+         else
+            return false, "Player '"..target.."' not found."
+         end
+      end
+   }
+)
+
+minetest.register_chatcommand(
+   "assoc_dynamic",
+   {
+      params = "<player> <t|f>",
+      description = "Designate a player as having a dynamic IP.",
+      func = function(name, param)
+         local split = param:split(" ")
+         if not next(split) or not split[1] then
+            return false, "No target specified."
+         end
+         local target = split[1]
+         if not split[2] then
+            return false, "No value specified."
+         end
+         local val = split[2]
+
+         if val == "t" then
+            val = true
+         elseif val == "f" then
+            val = false
+         else
+            return false, "Value is not 't' or 'f'."
+         end
+
+         local player_record = pm.get_player_by_name(target)
+         if player_record then
+            pm.set_player_dynamic_ip(target, val)
+            minetest.chat_send_player(
+               name, "Dynamic IP updated for '"..target.."'."
+            )
+         else
+            return false, "Player '"..target.."' not found."
+         end
+
+      end
+   }
+)
