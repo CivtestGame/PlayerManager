@@ -277,10 +277,9 @@ function pm.get_player_ips(player_id)
    )
    if not cur then return {} end
 
-   local ips
+   local ips = {}
    local row = cur:fetch({}, "a")
    while row do
-      ips = ips or {}
       ips[#ips + 1] = row.ip
       row = cur:fetch(row, "a")
    end

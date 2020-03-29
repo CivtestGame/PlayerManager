@@ -97,6 +97,7 @@ minetest.register_chatcommand(
    {
       params = "<player> <ip>",
       description = "Assign a player to a shared IP.",
+      privs = { pm_admin = true },
       func = function(name, param)
          local split = param:split(" ")
          if not next(split) or not split[1] then
@@ -126,6 +127,7 @@ minetest.register_chatcommand(
    {
       params = "<player> <t|f>",
       description = "Designate a player as having a dynamic IP.",
+      privs = { pm_admin = true },
       func = function(name, param)
          local split = param:split(" ")
          if not next(split) or not split[1] then
@@ -155,6 +157,66 @@ minetest.register_chatcommand(
             return false, "Player '"..target.."' not found."
          end
 
+      end
+   }
+)
+
+minetest.register_chatcommand(
+   "assoc_info",
+   {
+      params = "<player>",
+      description = "Show player association info.",
+      privs = { pm_admin = true },
+      func = function(name, param)
+         if param == "" then
+            return false, "No player specified."
+         end
+         local target = param
+
+         local player_record = pm.get_player_by_name(target)
+
+         if not player_record then
+            return false, "Player '"..target.."' was not found."
+         end
+         local shared_ip = player_record.shared_ip
+         local dynamic_ip = (player_record.dynamic_ip == "t" and "YES")
+            or "NO"
+
+         local ips = pm.get_player_ips(player_record.id)
+
+         local alts = {}
+
+         for _,ip in ipairs(ips) do
+            local other_players = pm.find_other_players_with_same_ip(
+               player_record.id, ip
+            ) or {}
+
+            for _,record in ipairs(other_players) do
+               local item = record.player_name
+               if record.shared_ip and shared_ip
+                  and record.shared_ip == shared_ip
+               then
+                  item = item .. " [Shared]"
+               end
+               alts[#alts + 1] = item
+            end
+         end
+
+         local online_and_ip = ""
+         if minetest.get_player_by_name(player_record.name) then
+            local pinfo = minetest.get_player_information(player_record.name)
+            online_and_ip = "  Player is ONLINE: " .. pinfo.address
+         end
+
+         minetest.chat_send_player(
+            name,
+            "Player: "..player_record.name.." [ "..player_record.id.." ]\n"
+               .."  Shared IP: "..(shared_ip or "NO")
+               .." | Dynamic IP: "..dynamic_ip.."\n"
+               .."  Associations: "..table.concat(alts, ", ").."\n"
+               .."  IPs: "..table.concat(ips, ", ").."\n"
+               ..online_and_ip
+         )
       end
    }
 )
