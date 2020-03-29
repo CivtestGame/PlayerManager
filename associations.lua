@@ -13,11 +13,10 @@ minetest.register_on_prejoinplayer(function(name, ip)
       if not player_record then
          player_id = pm.generate_id()
          pm.register_player(name, player_id)
-         pm.register_ipaddress(ip)
-         pm.register_player_ipaddress(player_id, ip)
-
          player_record = pm.get_player_by_name(name)
       end
+      pm.register_ipaddress(ip)
+      pm.register_player_ipaddress(player_id, ip)
 
       local other_players = pm.find_other_players_with_same_ip(
          player_id, ip
