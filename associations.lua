@@ -8,7 +8,7 @@ local function toboolean(thing)
       or false
 end
 
-local function get_associations(player_record)
+local function get_associations(player_record, ip)
    local other_players = pm.find_other_players_with_same_ip(
       player_record.id, ip
    )
@@ -35,7 +35,7 @@ local function get_associations(player_record)
       end
 
       minetest.log(
-         name.." ["..ip.."] bypassed alt check [shared IP with "
+         player_record.name.." ["..ip.."] bypassed alt check [shared IP with "
             .. table.concat(alts, ", ") .. "]."
       )
    end
@@ -50,16 +50,21 @@ minetest.register_on_joinplayer(function(player)
       -- complicate the job of detangling the alt/IP combos.
       --
       local name = player:get_player_name()
+      local pinfo = minetest.get_player_information(name)
+      local ip = pinfo.address
       local player_record = pm.get_player_by_name(name)
+      local player_id = player_record and player_record.id
       if not player_record then
          player_id = pm.generate_id()
          pm.register_player(name, player_id)
          player_record = pm.get_player_by_name(name)
 
-         local alts, msg = get_associations(player_record)
+         local alts, msg = get_associations(player_record, ip)
          if alts then
             if combat_tag then
-               combat_tag.set_tag(name, 0)
+               -- Remove the combat tag so the player doesn't die on kick.
+               -- Specifically, make them exempt.
+               combat_tag.make_exempt(player)
             end
             minetest.kick_player(name, msg)
             return
@@ -96,7 +101,7 @@ minetest.register_on_prejoinplayer(function(name, ip)
       end
 
       -- Existing accounts with associations are not allowed to connect.
-      local alts, msg = get_associations(player_record)
+      local alts, msg = get_associations(player_record, ip)
       if alts then
          return msg
       end
@@ -110,8 +115,8 @@ minetest.register_on_prejoinplayer(function(name, ip)
       local player_id = player_record.id
       local ip_match = pm.match_player_and_ip(player_id, ip)
       if not ip_match then
-         local ips, shared = pm.get_player_ips(player_id)
-         if not ips then
+         local ips = pm.get_player_ips(player_id)
+         if not ips or not next(ips) then
             minetest.log(
                name.." ["..ip.."] did not have an IP address assigned."
             )
