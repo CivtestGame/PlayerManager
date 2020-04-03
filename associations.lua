@@ -1,6 +1,8 @@
 
 local function toboolean(thing)
-   thing = thing:lower()
+   if type(thing) == "string" then
+      thing = thing:lower()
+   end
    return ((thing == "t"
                or thing == "true"
                or thing == "yes"
