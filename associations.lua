@@ -4,8 +4,19 @@ local function toboolean(thing)
    return ((thing == "t"
                or thing == "true"
                or thing == "yes"
+               or thing == "enabled"
                or thing == true) and true)
       or false
+end
+
+local assoc_enabled
+   = toboolean(minetest.settings:get("playermanager_association"))
+
+if not assoc_enabled then
+   minetest.log("warning", "[PlayerManager] Associations are DISABLED.")
+   return
+else
+   minetest.log("[PlayerManager] Associations are ENABLED.")
 end
 
 local function get_associations(player_record, ip)
