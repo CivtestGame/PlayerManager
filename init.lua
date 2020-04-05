@@ -8,7 +8,7 @@ local ie = minetest.request_insecure_environment() or
             .."Add it to `secure.trusted_mods` in minetest.conf")
 
 -- Ensure the db object doesn't leak outside of the plugin
-loadfile(modpath .. "/db.lua")(ie)
+local db = loadfile(modpath .. "/db.lua")(ie)
 assert(loadfile(modpath .. "/playermanager.lua"))(db)
 dofile(modpath .. "/group_commands.lua")
 dofile(modpath .. "/associations.lua")
