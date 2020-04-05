@@ -16,7 +16,6 @@ local assoc_enabled
 
 if not assoc_enabled then
    minetest.log("warning", "[PlayerManager] Associations are DISABLED.")
-   return
 else
    minetest.log("[PlayerManager] Associations are ENABLED.")
 end
@@ -70,13 +69,17 @@ minetest.register_on_joinplayer(function(player)
       if not player_record then
          player_id = pm.generate_id()
          pm.register_player(name, player_id)
-         player_record = pm.get_player_by_name(name)
 
+         if not assoc_enabled then
+            return
+         end
+
+         player_record = pm.get_player_by_name(name)
          local alts, msg = get_associations(player_record, ip)
          if alts then
             if combat_tag then
                -- Remove the combat tag so the player doesn't die on kick.
-               -- Specifically, make them exempt.
+               -- Specifically, we make them exempt.
                combat_tag.make_exempt(player)
             end
             minetest.kick_player(name, msg)
@@ -90,6 +93,10 @@ end)
 
 
 minetest.register_on_prejoinplayer(function(name, ip)
+      if not assoc_enabled then
+         return
+      end
+
       if name:len() >= 20 then
          -- I think MT protects us against this, but who knows.
          return "Username: '"..name.."' is too long."
