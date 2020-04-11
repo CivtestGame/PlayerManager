@@ -425,7 +425,8 @@ local function group_delete_cmd(sender, group_name, confirm)
    if not confirm or
       confirm ~= "confirm"
    then
-      return false, "You must confirm this action!"
+      return false, "You must confirm this action! Use "
+         .. "'/group delete <group> confirm'."
    end
 
    -- Deleting is a bit of a misnomer. The group stays in the database, it just
