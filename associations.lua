@@ -14,6 +14,9 @@ end
 local assoc_enabled
    = toboolean(minetest.settings:get("playermanager_association"))
 
+local strict_dynamic_assoc
+   = toboolean(minetest.settings:get("playermanager_dynamic_strictness"))
+
 if not assoc_enabled then
    minetest.log("warning", "[PlayerManager] Associations are DISABLED.")
 else
@@ -129,8 +132,11 @@ minetest.register_on_prejoinplayer(function(name, ip)
       -- Unless the player is specifed as having a shared or dynamic IP, they
       -- should only be able connect from their designated, static IP.
       --
-      -- XXX: I may very well disable this in the future. It doesn't really
-      -- serve much purpose.
+      -- This can be turned off with the playermanager_dynamic_strictness config
+
+      if not strict_dynamic_assoc then
+         return
+      end
 
       local player_id = player_record.id
       local ip_match = pm.match_player_and_ip(player_id, ip)
