@@ -32,18 +32,6 @@ local function prep_db()
          UNIQUE (name)
      )]]))
 
-   -- create reinforcements table
-   res = assert(u.prepare(db, [[
-     CREATE TABLE IF NOT EXISTS reinforcement (
-         x INTEGER NOT NULL,
-         y INTEGER NOT NULL,
-         z INTEGER NOT NULL,
-         value INTEGER NOT NULL,
-         material VARCHAR(50) NOT NULL,
-         ctgroup_id VARCHAR(32) REFERENCES ctgroup(id),
-         PRIMARY KEY (x, y, z)
-     )]]))
-
    -- maps players to ip addresses
    res = assert(u.prepare(db, [[
      CREATE TABLE IF NOT EXISTS ipaddress (
