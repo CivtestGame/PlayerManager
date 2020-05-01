@@ -64,8 +64,7 @@ local function prep_db()
    res = assert(u.prepare(db, [[
      CREATE TABLE IF NOT EXISTS player_ipaddress (
          player_id varchar(16) REFERENCES player(id),
-         ip varchar(39) REFERENCES ipaddress(value),
-         PRIMARY KEY (player_id)
+         ip varchar(39) REFERENCES ipaddress(value)
      )]]))
 
    -- maps players to players that they're allowed to share IP addresses with

@@ -257,7 +257,6 @@ end
 local QUERY_REGISTER_PLAYER_IPADDRESS = [[
   INSERT INTO player_ipaddress (player_id, ip)
   VALUES (?, ?)
-  ON CONFLICT DO NOTHING
 ]]
 
 function pm.register_player_ipaddress(player_id, ip_address)

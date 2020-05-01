@@ -262,6 +262,7 @@ minetest.register_chatcommand(
          local ips = pm.get_player_ips(player_record.id)
 
          local alts = {}
+         local alts_tab = {}
 
          for _,ip in ipairs(ips) do
             local other_players = pm.find_other_players_with_same_ip(
@@ -270,7 +271,10 @@ minetest.register_chatcommand(
 
             for _,record in ipairs(other_players) do
                local item = record.player_name
-               alts[#alts + 1] = item
+               if not alts_tab[item] then
+                  alts[#alts + 1] = item
+                  alts_tab[item] = true
+               end
             end
          end
 
