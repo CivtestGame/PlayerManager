@@ -29,14 +29,12 @@ local function get_associations(player_record, ip)
    )
 
    if other_players and next(other_players) then
-      local player_shared_ip = player_record.shared_ip
+      local shared_players
+         = pm.get_player_shared_ip_players(player_record.id)
 
       local alts = {}
       for _,record in ipairs(other_players) do
-         if not record.shared_ip
-            or not player_shared_ip
-            or record.shared_ip ~= player_shared_ip
-         then
+         if not shared_players[record.player_name] then
             alts[#alts + 1] = record.player_name
          end
       end
@@ -162,29 +160,41 @@ end)
 minetest.register_chatcommand(
    "assoc_shared",
    {
-      params = "<player> <ip>",
-      description = "Assign a player to a shared IP.",
+      params = "<player1> <player2>",
+      description = "Allow two players to share their IP addresses.",
       privs = { pm_admin = true },
       func = function(name, param)
          local split = param:split(" ")
          if not next(split) or not split[1] then
-            return false, "No target specified."
+            return false, "No player1 specified."
          end
-         local target = split[1]
+         local player1 = split[1]
          if not split[2] then
-            return false, "No IP specified."
+            return false, "No player2 specified."
          end
-         local ip = split[2]
+         local player2 = split[2]
 
-         local player_record = pm.get_player_by_name(target)
-         if player_record then
-            pm.set_player_shared_ip(target, ip)
-            minetest.chat_send_player(
-               name, "Shared IP updated for '"..target.."'."
-            )
-         else
-            return false, "Player '"..target.."' not found."
+         local player1_record = pm.get_player_by_name(player1)
+         if not player1_record then
+            return false, "Player '"..player1.."' not found."
          end
+
+         local player2_record = pm.get_player_by_name(player2)
+         if not player2_record then
+            return false, "Player '"..player2.."' not found."
+         end
+
+         local player1_id = player1_record.id
+         local player2_id = player2_record.id
+
+         -- Build the two-way association
+         pm.set_player_new_shared_ip(player1_id, player2_id)
+         pm.set_player_new_shared_ip(player2_id, player1_id)
+
+         minetest.chat_send_player(
+            name, "Success: " .. player1 .. " and " .. player2 .. " "
+               .. "can now share their connection."
+         )
       end
    }
 )
@@ -245,7 +255,7 @@ minetest.register_chatcommand(
          if not player_record then
             return false, "Player '"..target.."' was not found."
          end
-         local shared_ip = player_record.shared_ip
+
          local dynamic_ip = (player_record.dynamic_ip == "t" and "YES")
             or "NO"
 
@@ -260,11 +270,6 @@ minetest.register_chatcommand(
 
             for _,record in ipairs(other_players) do
                local item = record.player_name
-               if record.shared_ip and shared_ip
-                  and record.shared_ip == shared_ip
-               then
-                  item = item .. " [Shared]"
-               end
                alts[#alts + 1] = item
             end
          end
@@ -275,12 +280,14 @@ minetest.register_chatcommand(
             online_and_ip = "  Player is ONLINE: " .. pinfo.address
          end
 
+         local _,shared_with = pm.get_player_shared_ip_players(player_record.id)
+
          minetest.chat_send_player(
             name,
             "Player: "..player_record.name.." [ "..player_record.id.." ]\n"
-               .."  Shared IP: "..(shared_ip or "NO")
-               .." | Dynamic IP: "..dynamic_ip.."\n"
                .."  Associations: "..table.concat(alts, ", ").."\n"
+               .."  Shares IP with: " .. table.concat(shared_with, ", ") .. "\n"
+               .."  Dynamic IP: "..dynamic_ip.."\n"
                .."  IPs: "..table.concat(ips, ", ").."\n"
                ..online_and_ip
          )

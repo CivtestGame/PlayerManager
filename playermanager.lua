@@ -200,7 +200,6 @@ function pm.get_players_for_group(ctgroup_id)
             name = row.name,
             id = row.id,
             permission = row.permission,
-            shared_ip = row.shared_ip,
             dynamic_ip = row.dynamic_ip,
          }
       )
@@ -324,22 +323,12 @@ function pm.find_other_players_with_same_ip(player_id, ip)
       players = players or {}
       players[#players + 1] = {
          player_name = row.name,
-         shared_ip = row.shared_ip,
          dynamic_ip = row.dynamic_ip
       }
       row = cur:fetch(row, "a")
    end
    return players
 end
-
-local QUERY_SET_PLAYER_SHARED_IP = [[
-  UPDATE player SET shared_ip = ? WHERE LOWER(name) = LOWER(?)
-]]
-
-function pm.set_player_shared_ip(player, ip_address)
-   return assert(u.prepare(db, QUERY_SET_PLAYER_SHARED_IP, ip_address, player))
-end
-
 
 local QUERY_SET_PLAYER_DYNAMIC_IP = [[
   UPDATE player SET dynamic_ip = ? WHERE LOWER(name) = LOWER(?)
@@ -348,5 +337,51 @@ local QUERY_SET_PLAYER_DYNAMIC_IP = [[
 function pm.set_player_dynamic_ip(player, ip_address)
    return assert(u.prepare(db, QUERY_SET_PLAYER_DYNAMIC_IP, ip_address, player))
 end
+
+----------------------------------------
+-- New shared-IP system
+----------------------------------------
+
+local QUERY_GET_SHARED_IP_PLAYERS = [[
+  SELECT shared_id, name FROM
+    (SELECT shared_id FROM player_shared_ip WHERE player_id = ?) AS shared
+  INNER JOIN player ON shared.shared_id = player.id
+]]
+
+function pm.get_player_shared_ip_players(player_id)
+   local cur = u.prepare(db, QUERY_GET_SHARED_IP_PLAYERS, player_id)
+   if not cur then return {} end
+
+   local shared_players_tab = {}
+   local shared_players_keyset = {}
+
+   local row = cur:fetch({}, "a")
+   while row do
+      shared_players_tab[row.name] = row.shared_id
+      shared_players_keyset[#shared_players_keyset + 1] = row.name
+      row = cur:fetch(row, "a")
+   end
+   return shared_players_tab, shared_players_keyset
+end
+
+local QUERY_SET_NEW_SHARED_IP = [[
+  INSERT INTO player_shared_ip (player_id, shared_id)
+  VALUES (?, ?);
+]]
+
+function pm.set_player_new_shared_ip(player_id, shared_id)
+   return assert(u.prepare(db, QUERY_SET_NEW_SHARED_IP,
+                           player_id, shared_id))
+end
+
+local QUERY_DELETE_NEW_SHARED_IP = [[
+  DELETE FROM player_shared_ip
+  WHERE player_id = ? AND shared_id = ?
+]]
+
+function pm.delete_player_new_shared_ip(player_id, shared_id)
+   return assert(u.prepare(db, QUERY_DELETE_NEW_SHARED_IP, player_id, shared_id))
+end
+
 
 --[[ End of DB interface ]]--

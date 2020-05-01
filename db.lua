@@ -46,7 +46,6 @@ local function prep_db()
          name VARCHAR(32) NOT NULL,
          join_date TIMESTAMP NOT NULL,
          dynamic_ip BOOLEAN NOT NULL DEFAULT FALSE,
-         shared_ip VARCHAR(39) REFERENCES ipaddress(value) DEFAULT NULL,
          PRIMARY KEY (id),
          UNIQUE (name)
      )]]))
@@ -67,6 +66,13 @@ local function prep_db()
          player_id varchar(16) REFERENCES player(id),
          ip varchar(39) REFERENCES ipaddress(value),
          PRIMARY KEY (player_id)
+     )]]))
+
+   -- maps players to players that they're allowed to share IP addresses with
+   res = assert(u.prepare(db, [[
+     CREATE TABLE IF NOT EXISTS player_shared_ip (
+         player_id varchar(16) REFERENCES player(id) NOT NULL,
+         shared_id varchar(16) REFERENCES player(id) NOT NULL
      )]]))
 end
 
